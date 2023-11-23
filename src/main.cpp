@@ -8,10 +8,12 @@
 #include "color.h"
 #include "imageloader.h"
 #include "raycaster.h"
+#include <SDL_mixer.h>
 
 SDL_Window *window;
 SDL_Renderer *renderer;
 
+bool isMusicOn = false;
 
 void clear()
 {
@@ -36,13 +38,16 @@ void draw_ui()
   std::string imageName;
   std::string l = std::to_string(level);
 
-  if(winner){
+  if (winner)
+  {
     imageName = "winner";
   }
-  else if(menu){
+  else if (menu)
+  {
     imageName = "home" + l;
   }
-  else{
+  else
+  {
     imageName = "bg" + l;
   }
 
@@ -57,9 +62,12 @@ int main(int argc, char *argv[])
   ImageLoader::init();
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
+  Mix_Init(MIX_INIT_MP3);
+
   window = SDL_CreateWindow("DOOM", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
   renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
+  // Cargar imagenes
   ImageLoader::loadImage("+", "../assets/w3.png", 64, 64);
   ImageLoader::loadImage("-", "../assets/w1.png", 64, 64);
   ImageLoader::loadImage("|", "../assets/w2.png", 64, 64);
@@ -67,7 +75,6 @@ int main(int argc, char *argv[])
   ImageLoader::loadImage("*", "../assets/w5.png", 64, 64);
   ImageLoader::loadImage("g", "../assets/w6.png", 64, 64);
   ImageLoader::loadImage("i", "../assets/w7.png", 64, 64);
-  /* ImageLoader::loadImage("p", "assets/player.png"); */
   ImageLoader::loadImage("bg1", "../assets/fondo1.png", 440, 315);
   ImageLoader::loadImage("bg2", "../assets/fondo2.png", 440, 315);
   ImageLoader::loadImage("bg3", "../assets/fondo3.png", 440, 315);
@@ -77,10 +84,21 @@ int main(int argc, char *argv[])
   ImageLoader::loadImage("winner", "../assets/winner.png", 440, 315);
   ImageLoader::loadImage("e1", "../assets/sprite1.png", 128, 128);
 
+  // cargar sonidos
+  Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 1024);
+  Mix_Music *gameSoundtrack = Mix_LoadMUS("../assets/musicaFondo.mp3");
+  Mix_Music *introSoundtrack = Mix_LoadMUS("../assets/introMusic.mp3");
+  Mix_Chunk *walkSound = Mix_LoadWAV("../assets/walk.mp3");
+  Mix_Chunk *select = Mix_LoadWAV("../assets/select.mp3");
+  Mix_Chunk *winnerSound = Mix_LoadWAV("../assets/winnerSound.mp3");
+
   Raycaster r = {renderer};
-  r.load_map("../assets/map.txt");
+
+  // Colocar música de intro
+  Mix_PlayMusic(introSoundtrack, -1);
 
   bool running = true;
+  bool winnerScreenDisplayed = false;
   while (running)
   {
 
@@ -115,38 +133,66 @@ int main(int argc, char *argv[])
           if (menu)
           {
             if (level > 1)
+            {
               level -= 1;
+              Mix_PlayChannel(0, select, 0);
+            }
           }
           else if (!winner)
           {
             r.moveForward();
+            Mix_PlayChannel(0, walkSound, 0);
           }
           break;
         case SDLK_DOWN:
           if (menu)
           {
             if (level < 3)
+            {
               level += 1;
+              Mix_PlayChannel(0, select, 0);
+            }
           }
           else if (!winner)
           {
             r.moveBack();
+            Mix_PlayChannel(0, walkSound, 0);
           }
           break;
         case SDLK_SPACE:
           if (menu)
+          {
             menu = false;
+
+            // cargar mundo
+            std::string l = std::to_string(level);
+
+            r.load_map("../assets/map" + l + ".txt");
+
+            Mix_PlayChannel(0, select, 0); // Efecto de tecla
+
+            // Detener música intro y colocar música de juego
+            Mix_HaltMusic();
+            Mix_PlayMusic(gameSoundtrack, -1);
+          }
           break;
         case SDLK_ESCAPE:
           // Escape en pantalla winner
-          if(winner){
+          if (winner)
+          {
             winner = false;
             menu = true;
+            winnerScreenDisplayed = false;
             r.resetPlayerPosition();
-            if (level < 3) level += 1;
-            else level = 1;
+
+            Mix_PlayChannel(0, select, 0);
+
+            if (level < 3)
+              level += 1;
+            else
+              level = 1;
           }
-        break;
+          break;
         default:
           break;
         }
@@ -177,6 +223,17 @@ int main(int argc, char *argv[])
           break;
         }
       }
+    }
+
+    if (winner && !winnerScreenDisplayed)
+    {
+      // Primera vez que se renderiza la página de ganador
+      winnerScreenDisplayed = true;
+
+      // Detener música juego y colocar música de intro
+      Mix_HaltMusic();
+      Mix_PlayMusic(introSoundtrack, -1);
+      Mix_PlayChannel(0, winnerSound, 0);
     }
 
     clear();
