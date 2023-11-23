@@ -71,7 +71,6 @@ public:
     tsize = 128;
 
     enemies = {Enemy{BLOCK * 5, BLOCK, "e1"}};
-    SDL_Log("%d, %d", SCREEN_WIDTH, SCREEN_HEIGHT);
   }
 
   void load_map(const std::string &filename)
