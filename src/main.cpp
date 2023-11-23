@@ -12,8 +12,6 @@
 SDL_Window *window;
 SDL_Renderer *renderer;
 
-bool menu = true;
-int level = 1;
 
 void clear()
 {
@@ -36,7 +34,18 @@ void draw_floor()
 void draw_ui()
 {
   std::string imageName;
-  imageName = (menu ? "home" : "bg") + std::to_string(level);
+  std::string l = std::to_string(level);
+
+  if(winner){
+    imageName = "winner";
+  }
+  else if(menu){
+    imageName = "home" + l;
+  }
+  else{
+    imageName = "bg" + l;
+  }
+
   ImageLoader::render(renderer, imageName, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 }
 
@@ -65,6 +74,7 @@ int main(int argc, char *argv[])
   ImageLoader::loadImage("home1", "../assets/home1.png", 440, 315);
   ImageLoader::loadImage("home2", "../assets/home2.png", 440, 315);
   ImageLoader::loadImage("home3", "../assets/home3.png", 440, 315);
+  ImageLoader::loadImage("winner", "../assets/winner.png", 440, 315);
   ImageLoader::loadImage("e1", "../assets/sprite1.png", 128, 128);
 
   Raycaster r = {renderer};
@@ -73,12 +83,6 @@ int main(int argc, char *argv[])
   bool running = true;
   while (running)
   {
-
-    if (r.winner)
-    {
-      SDL_Log("you win");
-      exit(1);
-    }
 
     frameStart = SDL_GetTicks();
 
@@ -95,13 +99,13 @@ int main(int argc, char *argv[])
         switch (event.key.keysym.sym)
         {
         case SDLK_LEFT:
-          if (!menu)
+          if (!menu && !winner)
           {
             r.player.a += 3.14 / 24;
           }
           break;
         case SDLK_RIGHT:
-          if (!menu)
+          if (!menu && !winner)
           {
 
             r.player.a -= 3.14 / 24;
@@ -113,7 +117,7 @@ int main(int argc, char *argv[])
             if (level > 1)
               level -= 1;
           }
-          else
+          else if (!winner)
           {
             r.moveForward();
           }
@@ -124,7 +128,7 @@ int main(int argc, char *argv[])
             if (level < 3)
               level += 1;
           }
-          else
+          else if (!winner)
           {
             r.moveBack();
           }
@@ -133,6 +137,16 @@ int main(int argc, char *argv[])
           if (menu)
             menu = false;
           break;
+        case SDLK_ESCAPE:
+          // Escape en pantalla winner
+          if(winner){
+            winner = false;
+            menu = true;
+            r.resetPlayerPosition();
+            if (level < 3) level += 1;
+            else level = 1;
+          }
+        break;
         default:
           break;
         }
@@ -144,7 +158,7 @@ int main(int argc, char *argv[])
         SDL_GetMouseState(&mouseX, &mouseY);
         if (mouseX >= SCREEN_WIDTH - SCREEN_WIDTH / 3)
         {
-          if (!menu)
+          if (!menu && !winner)
           {
             r.player.a -= 3.14 / 24;
             if (r.player.a > 2 * M_PI)
@@ -154,7 +168,7 @@ int main(int argc, char *argv[])
         }
         if (mouseX <= SCREEN_WIDTH / 3)
         {
-          if (!menu)
+          if (!menu && !winner)
           {
             r.player.a += 3.14 / 24;
             if (r.player.a < 2 * M_PI)
@@ -167,7 +181,7 @@ int main(int argc, char *argv[])
 
     clear();
 
-    if (!menu)
+    if (!menu && !winner)
     {
       draw_floor();
 
