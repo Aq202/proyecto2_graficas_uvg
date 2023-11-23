@@ -8,6 +8,8 @@ juego es encontrar la salida. Se cuentan con 3 niveles diferentes.
 
 https://youtu.be/OsSm8nBd1yI?si=GNhZhK3CpZmfkBP_
 
+![Resultado final](result/preview.gif)
+
 ## Controles
 
 Los controles del juego son los siguientes:
