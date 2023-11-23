@@ -75,6 +75,7 @@ public:
 
   void load_map(const std::string &filename)
   {
+    map.clear();
     std::ifstream file(filename);
     std::string line;
     while (getline(file, line))
