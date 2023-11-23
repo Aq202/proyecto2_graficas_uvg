@@ -1,0 +1,5 @@
+/build
+/.vscode
+SDL2.dll
+/include
+SDL2_image.dll
